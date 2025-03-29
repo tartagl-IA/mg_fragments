@@ -95,6 +95,8 @@ def main(target_id_list: list[str]) -> None:
         for mol_list in smarts_fragments_dict_top.values():
             fragments_mol_top_all.extend(mol_list)
         unique_fragment_mols = unique_mol_list(fragments_mol_top_all)
+        if not os.path.exists(settings.FRAGMENTS_OUTPUT_DIR):
+            os.makedirs(settings.FRAGMENTS_OUTPUT_DIR)
         save_mols_to_sdf(
             unique_fragment_mols,
             output_file=os.path.join(
@@ -108,11 +110,11 @@ def main(target_id_list: list[str]) -> None:
 if __name__ == "__main__":
     target_id_list = [
         "CHEMBL1075189",
-        # "CHEMBL1075126",
-        # "CHEMBL3194",
-        # "CHEMBL3864",
-        # "CHEMBL3632452",
-        # "CHEMBL288",
-        # "CHEMBL5291543",
+        "CHEMBL1075126",
+        "CHEMBL3194",
+        "CHEMBL3864",
+        "CHEMBL3632452",
+        "CHEMBL288",
+        "CHEMBL5291543",
     ]
     main(target_id_list)
