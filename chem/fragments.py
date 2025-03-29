@@ -4,17 +4,17 @@ from rdkit.Chem import BRICS, Mol, MolFromSmiles, rdMolDescriptors
 
 
 def filtered_fragments_from_mol(
-    mol: Mol, min_atoms: int = 5, max_atoms: int = 100, flexibility: str = "rigid"
+    mol: Mol, min_atoms: int, max_atoms: int, flexibility: str
 ) -> list[Mol]:
     """Generate fragments from a molecule using BRICS decomposition and filter them based on size and flexibility.
 
     Args:
         mol (Mol): RDKit molecule object.
-        min_atoms (int, optional): Min atoms to filter the molecule. Defaults to 5.
-        max_atoms (int, optional): Max atoms to filter the molecule. Defaults to 100.
+        min_atoms (int, optional): Min atoms to filter the molecule.
+        max_atoms (int, optional): Max atoms to filter the molecule.
         flexibility (str, optional):
             - 'rigid' for 0 rotatable bonds
-            - 'flexible' for 1 degree of freedom. Defaults to "rigid"
+            - 'flexible' for 1 degree of freedom
 
     Returns:
         list[Mol]: List of filtered RDKit molecule objects.

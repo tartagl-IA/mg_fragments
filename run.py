@@ -5,8 +5,10 @@ from a database, filters the fragments of these molecules, and saves the unique 
 to SDF files.
 """
 
+import os
 import sys
 
+import settings
 from chem.filters import mol_is_reactive
 from chem.fragments import Mol, filtered_fragments_from_mol
 from chem.utils import (
@@ -37,7 +39,12 @@ def filtered_fragments_from_smiles(smiles: str) -> None | dict[str, list[Mol]]:
     if mol_is_reactive(mol):
         log.debug(f"Mol is reactive: {smiles}")
         return None
-    fragment_mol_list = filtered_fragments_from_mol(mol)
+    fragment_mol_list = filtered_fragments_from_mol(
+        mol,
+        settings.FRAGMENTS_MIN_ATOMS,
+        settings.FRAGMENTS_MAX_ATOMS,
+        settings.FRAGMENTS_FLEXIBILITY,
+    )
 
     smarts_fragments_dict: dict[str, list[Mol]] = {}
     for fragment_mol in fragment_mol_list:
@@ -49,13 +56,13 @@ def filtered_fragments_from_smiles(smiles: str) -> None | dict[str, list[Mol]]:
 
 
 def get_top_results(
-    smarts_fragments_dict: dict[str, list[Mol]], top_n: int = 20
+    smarts_fragments_dict: dict[str, list[Mol]], top_n: int
 ) -> dict[str, list[Mol]]:
     """Get the top N results from a dictionary of SMILES fragments.
 
     Args:
         smarts_fragments_dict (dict[str, list[Mol]]): dictionary of SMARTS and associated Molecules
-        top_n (int, optional): Retrieve first N results. Defaults to 20.
+        top_n (int, optional): Retrieve first N results.
 
     Returns:
         dict[str, list[Mol]]: dictionary of top N SMARTS and associated Molecules
@@ -68,17 +75,8 @@ def get_top_results(
     return dict(list(smarts_fragments_dict_sorted.items())[:top_n])
 
 
-def main() -> None:
+def main(target_id_list: list[str]) -> None:
     """Main function to process target IDs and save fragments to SDF files."""
-    target_id_list = [
-        "CHEMBL1075189",
-        # "CHEMBL1075126",
-        # "CHEMBL3194",
-        # "CHEMBL3864",
-        # "CHEMBL3632452",
-        # "CHEMBL288",
-        # "CHEMBL5291543",
-    ]
     db_mgf_connection = db_mgf_get_db_connection()
     for target_id in target_id_list:
         log.info(f"Processing target: {target_id}")
@@ -90,15 +88,31 @@ def main() -> None:
             if smarts_fragments_dict is None:
                 continue
             target_smarts_fragments_dict.update(smarts_fragments_dict)
-        smarts_fragments_dict_top = get_top_results(target_smarts_fragments_dict)
+        smarts_fragments_dict_top = get_top_results(
+            target_smarts_fragments_dict, settings.FRAGMENTS_TOP_RES
+        )
         fragments_mol_top_all = []
         for mol_list in smarts_fragments_dict_top.values():
             fragments_mol_top_all.extend(mol_list)
         unique_fragment_mols = unique_mol_list(fragments_mol_top_all)
-        save_mols_to_sdf(unique_fragment_mols, output_file=f"fragments.{target_id}.sdf")
+        save_mols_to_sdf(
+            unique_fragment_mols,
+            output_file=os.path.join(
+                settings.FRAGMENTS_OUTPUT_DIR, f"fragments.{target_id}.sdf"
+            ),
+        )
         log.info(f"Finished processing target: {target_id}")
     db_mgf_close_db_connection(db_mgf_connection)
 
 
 if __name__ == "__main__":
-    main()
+    target_id_list = [
+        "CHEMBL1075189",
+        # "CHEMBL1075126",
+        # "CHEMBL3194",
+        # "CHEMBL3864",
+        # "CHEMBL3632452",
+        # "CHEMBL288",
+        # "CHEMBL5291543",
+    ]
+    main(target_id_list)
