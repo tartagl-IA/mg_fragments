@@ -1,10 +1,9 @@
 import os
+from typing import Generator
 
 from chembl_webresource_client.settings import Settings
 
 Settings.Instance().FAST_SAVE = False
-
-from typing import Generator
 
 from chembl_webresource_client.new_client import new_client
 from chembl_webresource_client.query_set import QuerySet
