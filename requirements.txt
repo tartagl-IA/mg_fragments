@@ -1,3 +1,4 @@
+chembl_webresource_client==0.10.9
+pre-commit==4.2.0
 requests==2.32.3
 rdkit==2024.9.6
-chembl_webresource_client==0.10.9
