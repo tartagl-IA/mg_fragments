@@ -9,7 +9,7 @@ import os
 import sys
 
 import settings
-from chem.filters import mol_is_reactive
+from chem.filters import mol_reactive
 from chem.fragments import Mol, filtered_fragments_from_mol
 from chem.utils import (
     mol_from_smiles,
@@ -36,7 +36,7 @@ def filtered_fragments_from_smiles(smiles: str) -> None | dict[str, list[Mol]]:
         or None if the molecule is reactive.
     """
     mol = mol_from_smiles(smiles)
-    if mol_is_reactive(mol):
+    if mol_reactive(mol):
         log.debug(f"Mol is reactive: {smiles}")
         return None
     fragment_mol_list = filtered_fragments_from_mol(
@@ -109,12 +109,13 @@ def main(target_id_list: list[str]) -> None:
 
 if __name__ == "__main__":
     target_id_list = [
-        "CHEMBL1075189",
-        "CHEMBL1075126",
-        "CHEMBL3194",
-        "CHEMBL3864",
-        "CHEMBL3632452",
-        "CHEMBL288",
-        "CHEMBL5291543",
+        # "CHEMBL1075189",
+        # "CHEMBL1075126",
+        # "CHEMBL3194",
+        # "CHEMBL3864",
+        # "CHEMBL3632452",
+        # "CHEMBL288",
+        # "CHEMBL5291543",
+        "CHEMBL1741208",
     ]
     main(target_id_list)

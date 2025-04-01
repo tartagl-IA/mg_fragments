@@ -36,3 +36,7 @@ def import_mol_by_targets_from_chem_db(target_id_list: list[str]) -> None:
     chembl_db_connection_close(chembl_db_connection)
     mgf_db_connection_close(mgf_db_connection)
     log.info("All mols imported from ChemDB to MGF DB")
+
+
+if __name__ == "__main__":
+    import_mol_by_targets_from_chem_db(["CHEMBL1741208"])

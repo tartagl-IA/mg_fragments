@@ -3,6 +3,7 @@
 import sqlite3
 from typing import Any, Generator
 
+from .. import get_db_connection
 from logger import get_logger
 
 TABLE_NAME = "mols"
@@ -38,9 +39,20 @@ def insert(connection: sqlite3.Connection, mol: dict[str, Any]) -> None:
     log.debug(f"Inserted into '{TABLE_NAME}' table")
 
 
-def get_by_target(
-    connection: sqlite3.Connection, target_id: str
-) -> Generator[dict[str, Any], None, None]:
+def get_available_targets() -> list[str]:
+    log.debug(f"Fetching from '{TABLE_NAME}' table available targets")
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    query = f"""
+        SELECT DISTINCT target_id FROM mols
+    """
+    cursor.execute(query)
+    res = [row["target_id"] for row in cursor.fetchall()]
+    connection.close()
+    return res
+
+
+def get_by_target(target_id: str) -> Generator[dict[str, Any], None, None]:
     """Retrieves a molecule from the 'mols' table based on target_id.
 
     Args:
@@ -51,6 +63,7 @@ def get_by_target(
         dict: Dictionary containing molecule data.
     """
     log.debug(f"Fetching from '{TABLE_NAME}' table by target_id: {target_id}")
+    connection = get_db_connection()
     cursor = connection.cursor()
     query = f"""
         SELECT * FROM {TABLE_NAME} WHERE target_id = ?
@@ -58,4 +71,5 @@ def get_by_target(
     cursor.execute(query, (target_id,))
     for row in cursor:
         yield row
+    connection.close()
     log.debug(f"Fetched all result for target ID: {target_id}")
