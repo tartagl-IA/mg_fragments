@@ -1,11 +1,7 @@
 import streamlit as st
 
 # Set up Streamlit page configuration
-st.set_page_config(
-    page_title="Multi-page Streamlit App",
-    page_icon="👋",
-    layout="wide"
-)
+st.set_page_config(page_title="Multi-page Streamlit App", page_icon="👋", layout="wide")
 
 # Sidebar for page navigation
 # st.sidebar.title("Navigation")

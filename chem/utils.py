@@ -1,6 +1,13 @@
 """Utilities for working with RDKit molecules."""
 
-from rdkit.Chem import Mol, MolFromSmarts, MolFromSmiles, MolToSmarts, MolToSmiles, SDWriter
+from rdkit.Chem import (
+    Mol,
+    MolFromSmarts,
+    MolFromSmiles,
+    MolToSmarts,
+    MolToSmiles,
+    SDWriter,
+)
 
 from logger import get_logger
 
@@ -53,6 +60,7 @@ def mol_from_smarts(smarts: str) -> Mol:
         Mol: RDKit molecule object
     """
     return MolFromSmarts(smarts)
+
 
 def unique_mol_list(mol_list: list[Mol]) -> list[Mol]:
     """Remove duplicate molecules from a list of RDKit molecules.

@@ -3,8 +3,9 @@
 import sqlite3
 from typing import Any, Generator
 
-from .. import get_db_connection
 from logger import get_logger
+
+from .. import get_db_connection
 
 TABLE_NAME = "mols"
 log = get_logger("DB MGF")

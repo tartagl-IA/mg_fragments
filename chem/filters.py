@@ -1,6 +1,8 @@
 """Filters for molecules."""
+
 import json
 from enum import Enum
+
 from rdkit.Chem import Mol, MolFromSmarts, rdMolDescriptors
 
 # REACTIVE_PATTERN_SMARTS_DICT = [
@@ -38,6 +40,7 @@ from rdkit.Chem import Mol, MolFromSmarts, rdMolDescriptors
 #     }
 # ]
 
+
 def get_reactive_patterns():
     with open("chem/reactive_patterns.json", "r") as f:
         patterns = json.load(f)
@@ -47,20 +50,22 @@ def get_reactive_patterns():
 
     return patterns
 
+
 REACTIVE_PATTERN_SMARTS_DICT_CACHE = [
     pattern["mol"] for pattern in get_reactive_patterns()
 ]
 
+
 class Flexibility(str, Enum):
     RIGID = "rigid"
     FLEXIBLE = "flexible"
-    
+
     @classmethod
     def values(cls) -> list[str]:
         return [e.value for e in cls]
 
 
-def mol_reactive(mol: Mol, mol_patterns = None) -> bool:
+def mol_reactive(mol: Mol, mol_patterns=None) -> bool:
     """Check if a molecule contains electrophilic groups using precompiled SMARTS.
 
     Args:
@@ -71,9 +76,8 @@ def mol_reactive(mol: Mol, mol_patterns = None) -> bool:
     """
     if not mol_patterns:
         patterns = REACTIVE_PATTERN_SMARTS_DICT_CACHE
-    return any(
-        mol.HasSubstructMatch(pattern) for pattern in mol_patterns
-    )
+    return any(mol.HasSubstructMatch(pattern) for pattern in mol_patterns)
+
 
 def mol_dimension_range(mol: Mol, min_atoms: int = 0, max_atoms: int = 0) -> bool:
     """Check if the dimension of the molecule is between the acceptance values.
@@ -90,17 +94,18 @@ def mol_dimension_range(mol: Mol, min_atoms: int = 0, max_atoms: int = 0) -> boo
         return min_atoms <= mol.GetNumAtoms()
     return min_atoms <= mol.GetNumAtoms() <= max_atoms
 
+
 def mol_flexibility(
-    mol: Mol, 
-    flexibility: Flexibility,
-    max_rotable_bond_flexible: None | int = None
+    mol: Mol, flexibility: Flexibility, max_rotable_bond_flexible: None | int = None
 ) -> bool:
     rb_num = rdMolDescriptors.CalcNumRotatableBonds(mol)
     if not max_rotable_bond_flexible:
         max_rotable_bond_flexible = 1
     if (
-        flexibility == Flexibility.RIGID and rb_num == 0 or
-        flexibility == Flexibility.FLEXIBLE and rb_num == max_rotable_bond_flexible
+        flexibility == Flexibility.RIGID
+        and rb_num == 0
+        or flexibility == Flexibility.FLEXIBLE
+        and rb_num == max_rotable_bond_flexible
     ):
         return True
     return False

@@ -7,6 +7,7 @@ def brics_from_mol(mol: Mol, min_size: int = 1) -> list[str]:
     # TODO: can be defined a minimum dimension of the BRIC with minFragmentSize
     return BRICS.BRICSDecompose(mol, minFragmentSize=min_size)
 
+
 def filtered_fragments_from_mol(
     mol: Mol, min_atoms: int, max_atoms: int, flexibility: str
 ) -> list[Mol]:
