@@ -1,37 +1,45 @@
 import os
 import sys
 
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-import scipy.cluster.hierarchy as sch
 import streamlit as st
-from rdkit.Chem import Draw, rdMolDescriptors
-from rdkit.DataStructs.cDataStructs import TanimotoSimilarity
+from rdkit.Chem import Draw
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(ROOT_DIR)
 
+import settings
 from chem import filters as chem_filters
 from chem import fragments as chem_fragments
 from chem import utils as chem_utils
 from db_mg_fragments.handlers import mols as db_mgf_mols_handler
+
+# --- setup ---
 
 ss = st.session_state
 if "reactive_patterns" not in ss:
     ss.reactive_patterns = chem_filters.get_reactive_patterns()
 if "frag_mol_list_filtered" not in ss:
     ss.frag_mol_list_filtered = None
+if "cluster_labels" not in ss:
+    ss.cluster_labels = None
+if "centroids" not in ss:
+    ss.centroids = None
 
 st.set_page_config(page_title="Molecule Explorer", page_icon="📊", layout="wide")
+
+
+# --- page ---
 
 st.title("Molecule Explorer")
 
 target_id_empty_value = "Select a Target ID"
-target_id = st.sidebar.selectbox(
+st_target_id = st.sidebar.selectbox(
     label="Target ID",
     options=[target_id_empty_value] + db_mgf_mols_handler.get_available_targets(),
 )
+
+# Reactive patterns section
 
 with st.expander("Reactive Patterns"):
     data = pd.DataFrame(
@@ -44,56 +52,56 @@ with st.expander("Reactive Patterns"):
 
     st.table(data)
 
-    index = st.number_input("index", min_value=0, step=1)
-    name = st.text_input("name")
-    smarts = st.text_input("smarts")
-    button1, button2, button3, button4 = st.columns(4)
-    with button1:
-        if st.button("Add pattern"):
-            try:
+    st_index = st.number_input("index", min_value=0, step=1)
+    st_name = st.text_input("name")
+    st_smarts = st.text_input("smarts")
+    st_button1, st_button2, st_button3, st_button4 = st.columns(4)
+    button_state = None
+    try:
+        with st_button1:
+            if st.button("Add pattern"):
                 ss.reactive_patterns.append(
                     {
-                        "name": name,
-                        "smarts": smarts,
-                        "mol": chem_utils.mol_from_smarts(smarts),
+                        "name": st_name,
+                        "smarts": st_smarts,
+                        "mol": chem_utils.mol_from_smarts(st_smarts),
                     }
                 )
                 st.rerun()
-                st.info("Pattern added")
-            except Exception as e:
-                st.error(f"Error adding pattern: {e}")
-    with button2:
-        if st.button("Update pattern"):
-            print(name, smarts)
-            if index < len(ss.reactive_patterns):
-                try:
-                    ss.reactive_patterns[index] = {
-                        "name": name if name else ss.reactive_patterns[index]["name"],
+                button_state = "Pattern added"
+        with st_button2:
+            if st.button("Update pattern"):
+                print(st_name, st_smarts)
+                if st_index < len(ss.reactive_patterns):
+                    ss.reactive_patterns[st_index] = {
+                        "name": (
+                            st_name
+                            if st_name
+                            else ss.reactive_patterns[st_index]["name"]
+                        ),
                         "smarts": (
-                            smarts if smarts else ss.reactive_patterns[index]["smarts"]
+                            st_smarts
+                            if st_smarts
+                            else ss.reactive_patterns[st_index]["smarts"]
                         ),
                         "mol": chem_utils.mol_from_smarts(
-                            smarts if smarts else ss.reactive_patterns[index]["smarts"]
+                            st_smarts
+                            if st_smarts
+                            else ss.reactive_patterns[st_index]["smarts"]
                         ),
                     }
                     st.rerun()
-                    st.info("Pattern updated")
-                except Exception as e:
-                    st.error(f"Error updating pattern: {e}")
-    with button3:
-        if st.button("Remove pattern"):
-            try:
-                if index < len(ss.reactive_patterns):
-                    del ss.reactive_patterns[index]
+                    button_state = "Pattern updated"
+        with st_button3:
+            if st.button("Remove pattern"):
+                if st_index < len(ss.reactive_patterns):
+                    del ss.reactive_patterns[st_index]
                 else:
                     st.error("Index out of range")
                 st.rerun()
-                st.info("Pattern removed")
-            except Exception as e:
-                st.error(f"Error removing pattern: {e}")
-    with button4:
-        if st.button("Save patterns"):
-            try:
+                button_state = "Pattern removed"
+        with st_button4:
+            if st.button("Save patterns"):
                 reactive_patterns = [
                     {"name": pattern["name"], "smarts": pattern["smarts"]}
                     for pattern in ss.reactive_patterns
@@ -102,14 +110,18 @@ with st.expander("Reactive Patterns"):
                     import json
 
                     json.dump(reactive_patterns, f, indent=4)
-                st.info("Patterns saved")
-            except Exception as e:
-                st.error(f"Error saving patterns: {e}")
+                button_state = "Patterns saved"
+    except Exception as e:
+        st.error(f"Error: {e}")
+    if button_state:
+        st.success(button_state)
 
-if target_id is not target_id_empty_value:
+st.divider()
+
+if st_target_id is not target_id_empty_value:
 
     target_mols_data = [
-        dict(data) for data in db_mgf_mols_handler.get_by_target(target_id)
+        dict(data) for data in db_mgf_mols_handler.get_by_target(st_target_id)
     ]
     for mol_data in target_mols_data:
         mol_data["mol"] = chem_utils.mol_from_smiles(mol_data["canonical_smiles"])
@@ -177,17 +189,9 @@ if target_id is not target_id_empty_value:
                 except Exception as e:
                     st.error(f"Error generating image for {mol_data['chembl_id']}: {e}")
 
-            # img = Draw.MolsToGridImage(
-            #     [mol_data["mol"] for mol_data in filtered_mols_data],
-            #     legends=[f"{mol_data['canonical_smiles']} ({mol_data['chembl_id']})" for mol_data in filtered_mols_data],
-            #     molsPerRow=4,
-            #     subImgSize=(300, 300)
-            # )
-            # st.image(img)
-
     st.sidebar.header("Fragments settings", divider=True)
     fragment_min_dim = st.sidebar.number_input(
-        "Fragment minimum num atoms", min_value=1, step=1
+        "Fragment minimum num atoms", min_value=1, step=1, value=12
     )
     fragment_max_dim = st.sidebar.number_input(
         "Fragment maximum num atoms", min_value=0, step=1
@@ -225,72 +229,98 @@ if target_id is not target_id_empty_value:
             )
         ]
 
+    if ss.frag_mol_list_filtered:
+        st.write(f"Total fragments: {len(ss.frag_mol_list_filtered)}")
+        if st.button("Show fragments", icon="🙈"):
+            with st.expander("Fragments"):
+                for frag_mol in ss.frag_mol_list_filtered:
+                    try:
+                        st.image(Draw.MolToImage(frag_mol))
+                    except Exception as e:
+                        st.error(f"Error generating image: {e}")
+
+st.divider()
 
 if ss.frag_mol_list_filtered:
-    st.write(f"Total fragments: {len(ss.frag_mol_list_filtered)}")
-
-    threshold = st.slider(
-        label="Cluster threshold", min_value=0.0, max_value=1.0, step=0.1
+    clustering_type = st.selectbox(
+        "Clustering type",
+        ["", "Maximum Common Substructure", "Tanimoto Similarity"],
     )
+    cluster_method = st.selectbox("Cluster method", ["", "distance", "maxclust"])
+    if cluster_method == "distance":
+        t = st.number_input(
+            "Cluster threshold", min_value=0.0, max_value=5.0, step=0.1, value=0.3
+        )
+    elif cluster_method == "maxclust":
+        t = st.number_input("Maximum number of clusters", min_value=1, step=1)
+    else:
+        t = None
 
-    if st.button("Generate clusters", icon="▶️"):
+    if clustering_type and cluster_method:
 
-        # Convert molecules to Morgan fingerprints
-        fingerprints = [
-            rdMolDescriptors.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048)
-            for mol in ss.frag_mol_list_filtered
-        ]
+        clustering_method = None
+        if clustering_type == "Maximum Common Substructure":
+            from chem.clustering import mcs as clustering_method
+        elif clustering_type == "Tanimoto Similarity":
+            from chem.clustering import tanimoto as clustering_method
 
-        # Compute pairwise similarity matrix
-        n_mols = len(ss.frag_mol_list_filtered)
-        sim_matrix = np.zeros((n_mols, n_mols))
+        if clustering_method:
+            if st.button("Generate clusters", icon="▶️"):
+                with st.spinner("Generating clusters..."):
+                    ss.cluster_labels = clustering_method.hierarchical_clustering(
+                        ss.frag_mol_list_filtered, cluster_method, t
+                    )
+                    ss.centroids = clustering_method.find_cluster_centroids(
+                        ss.frag_mol_list_filtered, ss.cluster_labels
+                    )
+                    st.toast("Prepared clustering results", icon="🎉")
 
-        for i in range(n_mols):
-            for j in range(i + 1, n_mols):
-                sim_matrix[i, j] = TanimotoSimilarity(fingerprints[i], fingerprints[j])
-                sim_matrix[j, i] = sim_matrix[i, j]  # Symmetric matrix
+                unique_cluster_labels = set(ss.cluster_labels)
+                st.subheader(
+                    f"Number of generated clusters: {len(unique_cluster_labels)}"
+                )
 
-        # Convert similarity to distance (1 - similarity)
-        dist_matrix = 1 - sim_matrix
+        if ss.cluster_labels is not None and ss.centroids is not None:
 
-        # Perform hierarchical clustering
-        linkage_matrix = sch.linkage(dist_matrix, method="average")
+            if st.button("Save to SDF file", icon="⬇️"):
+                with st.spinner("Saving to SDF file..."):
+                    from chem.utils import save_mols_to_sdf
 
-        # Create clusters
-        # threshold = 0.3  # Adjust clustering threshold
-        clusters = sch.fcluster(linkage_matrix, threshold, criterion="distance")
+                    save_mols_to_sdf(
+                        [
+                            ss.centroids[cluster_id]
+                            for cluster_id in set(ss.cluster_labels)
+                        ],
+                        output_file=os.path.join(
+                            ROOT_DIR,
+                            settings.FRAGMENTS_OUTPUT_DIR,
+                            f"{st_target_id}_centroids_fragments.sdf",
+                        ),
+                    )
+                st.toast("Saved to SDF file", icon="🎉")
 
-        # Prepare clustering results
-        clustered_mols = {}
-        for idx, cluster_id in enumerate(clusters):
-            if cluster_id not in clustered_mols:
-                clustered_mols[cluster_id] = []
-            clustered_mols[cluster_id].append(ss.frag_mol_list_filtered[idx])
-        st.header(f"Clusters: {len(clustered_mols)}")
+            if st.button("Show clustered molecules", icon="🔍"):
 
-        # # Show Dendrogram
-        # fig, ax = plt.subplots(figsize=(10, 5))
-        # sch.dendrogram(linkage_matrix, labels=[f"Mol {i}" for i in range(n_mols)], leaf_rotation=90)
-        # st.pyplot(fig)
-
-        # # Show clustered molecules
-        # for cluster_id, mols in clustered_mols.items():
-        #     st.subheader(f"Cluster {cluster_id}")
-        #     img = Draw.MolsToGridImage(mols, molsPerRow=4, subImgSize=(30, 30))
-        #     st.image(img)
-
-        def mol_to_bytes(mol):
-            from io import BytesIO
-
-            img = Draw.MolToImage(mol, size=(300, 300))  # Generate molecule image
-            buf = BytesIO()
-            img.save(buf, format="PNG")
-            return buf.getvalue()
-
-        from rdkit.Chem import MolToSmiles
-
-        for cluster_id, mols in clustered_mols.items():
-            st.header(cluster_id)
-            for mol in mols:
-                st.image(mol_to_bytes(mol), caption=MolToSmiles(mol))
-            break
+                for current_cluster_id in set(ss.cluster_labels):
+                    st.subheader(f"Cluster {current_cluster_id}")
+                    st.image(
+                        chem_utils.mol_to_bytes(ss.centroids[current_cluster_id]),
+                        caption=chem_utils.smiles_from_mol(
+                            ss.centroids[current_cluster_id]
+                        ),
+                    )
+                    idx_mol_in_cluster = [
+                        idx
+                        for idx, cluster_id in enumerate(ss.cluster_labels)
+                        if cluster_id == current_cluster_id
+                    ]
+                    with st.expander(
+                        f"{len(idx_mol_in_cluster)} molecule in cluster", expanded=False
+                    ):
+                        for idx in idx_mol_in_cluster:
+                            mol = ss.frag_mol_list_filtered[idx]
+                            st.image(
+                                chem_utils.mol_to_bytes(mol),
+                                caption=chem_utils.smiles_from_mol(mol),
+                            )
+                    st.divider()

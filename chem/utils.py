@@ -1,6 +1,9 @@
 """Utilities for working with RDKit molecules."""
 
+from io import BytesIO
+
 from rdkit.Chem import (
+    Draw,
     Mol,
     MolFromSmarts,
     MolFromSmiles,
@@ -77,6 +80,13 @@ def unique_mol_list(mol_list: list[Mol]) -> list[Mol]:
         if smi not in unique_mols:
             unique_mols[smi] = mol
     return list(unique_mols.values())
+
+
+def mol_to_bytes(mol):
+    img = Draw.MolToImage(mol, size=(300, 300))  # Generate molecule image
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 def save_mols_to_sdf(mol_list: list[Mol], output_file: str = "fragments.sdf") -> None:

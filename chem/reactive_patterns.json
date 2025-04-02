@@ -1,7 +1,7 @@
 [
     {
         "name": "Michael acceptor",
-        "smarts": "[#6](=[#6]-[#6]=[#8])(-[#1])-[#1]"
+        "smarts": "[C;!aH1]=[C;!a][C]=[O]"
     },
     {
         "name": "Aldehydes",
@@ -40,7 +40,35 @@
         "smarts": "[#6]-1-[#8]-[#6]-[#6]-[#8]-1"
     },
     {
-        "name": "Sugar",
-        "smarts": "[#6](-[#8]-[#1])-[#8]"
+        "name": "Sugars",
+        "smarts": "[#6]-1-[#6]-[#6]-[#6](-[#6](-[#6]-[#8])-[#8]-1)-[#8]"
+    },
+    {
+        "name": "Oridonin-like",
+        "smarts": "[#6]-1(-[#6]-[#6]-[#6]-[#6]-1=[#6])=[#8]"
+    },
+    {
+        "name": "Si, P, B, Se atoms",
+        "smarts": "*[Si,P,B,Se]"
+    },
+    {
+        "name": "Michael acceptor 2",
+        "smarts": "[#6]=[#6](-[#6]#[#7])-[#6](=[#8])-[#6]"
+    },
+    {
+        "name": "Michael acceptor 3",
+        "smarts": "[#6]=[#6](-[#6]=[#8])-[#6](=[#8])-[#6]"
+    },
+    {
+        "name": "Dapasuntrile-like",
+        "smarts": "[#16](=[#8])(=[#8])-[#6]=[#6]-[#6]#[#7]"
+    },
+    {
+        "name": "Hydroxysulphamoyl",
+        "smarts": "[#16](=[#8])(=[#8])-[#7]-[#8]"
+    },
+    {
+        "name": "Alpha halogenated ketones",
+        "smarts": "[#6]-[#6]([#9,#17,#35,#53])=[#8]-[#6]"
     }
 ]
