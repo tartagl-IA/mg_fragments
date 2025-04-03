@@ -40,6 +40,25 @@ def insert(connection: sqlite3.Connection, mol: dict[str, Any]) -> None:
     log.debug(f"Inserted into '{TABLE_NAME}' table")
 
 
+def remove_by_target_id(connection: sqlite3.Connection, target_id: str) -> None:
+    """Removes a molecule from the 'mols' table based on target_id.
+
+    Args:
+        connection (sqlite3.Connection): SQLite database connection.
+        target_id (str): Target ID of the molecule.
+
+    Returns:
+        None
+    """
+    log.debug(f"Removing from '{TABLE_NAME}' table by target_id: {target_id}")
+    cursor = connection.cursor()
+    query = f"""
+        DELETE FROM {TABLE_NAME} WHERE target_id = ?
+    """
+    cursor.execute(query, (target_id,))
+    connection.commit()
+    log.debug(f"Removed from '{TABLE_NAME}' table by target_id: {target_id}")
+
 def get_available_targets() -> list[str]:
     log.debug(f"Fetching from '{TABLE_NAME}' table available targets")
     connection = get_db_connection()
