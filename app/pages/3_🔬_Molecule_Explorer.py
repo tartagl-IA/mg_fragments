@@ -19,12 +19,20 @@ from db_mg_fragments.handlers import mols as db_mgf_mols_handler
 ss = st.session_state
 if "reactive_patterns" not in ss:
     ss.reactive_patterns = chem_filters.get_reactive_patterns()
+if "selected_target_id" not in ss:
+    ss.selected_target_id = None
 if "frag_mol_list_filtered" not in ss:
     ss.frag_mol_list_filtered = None
 if "cluster_labels" not in ss:
     ss.cluster_labels = None
 if "centroids" not in ss:
     ss.centroids = None
+
+def reset():
+    ss.frag_mol_list_filtered = None
+    ss.cluster_labels = None
+    ss.centroids = None
+
 
 st.set_page_config(page_title="Molecule Explorer", page_icon="📊", layout="wide")
 
@@ -34,9 +42,10 @@ st.set_page_config(page_title="Molecule Explorer", page_icon="📊", layout="wid
 st.title("Molecule Explorer")
 
 target_id_empty_value = "Select a Target ID"
-st_target_id = st.sidebar.selectbox(
+ss.selected_target_id = st.sidebar.selectbox(
     label="Target ID",
     options=[target_id_empty_value] + db_mgf_mols_handler.get_available_targets(),
+    on_change=reset,
 )
 
 # Reactive patterns section
@@ -71,7 +80,6 @@ with st.expander("Reactive Patterns"):
                 button_state = "Pattern added"
         with st_button2:
             if st.button("Update pattern"):
-                print(st_name, st_smarts)
                 if st_index < len(ss.reactive_patterns):
                     ss.reactive_patterns[st_index] = {
                         "name": (
@@ -118,10 +126,12 @@ with st.expander("Reactive Patterns"):
 
 st.divider()
 
-if st_target_id is not target_id_empty_value:
+# Fragments
 
+if ss.selected_target_id is not target_id_empty_value:
+    
     target_mols_data = [
-        dict(data) for data in db_mgf_mols_handler.get_by_target(st_target_id)
+        dict(data) for data in db_mgf_mols_handler.get_by_target(ss.selected_target_id)
     ]
     for mol_data in target_mols_data:
         mol_data["mol"] = chem_utils.mol_from_smiles(mol_data["canonical_smiles"])
@@ -160,34 +170,36 @@ if st_target_id is not target_id_empty_value:
     if filtered_mols_data:
         show = st.button("Show filtered molecules", icon="▶️")
         expose_patterns = st.toggle("Expose reactive patterns", value=False)
+        
         if show:
-            st.subheader("Filtered molecules")
-            for mol_data in filtered_mols_data:
-                try:
-                    img_col, desc_col = st.columns([1, 1])
-                    with img_col:
-                        st.image(Draw.MolToImage(mol_data["mol"]))
-                        st.write("CHEMBL ID: ", mol_data["chembl_id"])
-                        st.write("SMILES: ", f'`{mol_data["canonical_smiles"]}`')
-                    with desc_col:
-                        if expose_patterns:
-                            filters = []
-                            for pattern in ss.reactive_patterns:
-                                if mol_data["mol"].HasSubstructMatch(pattern["mol"]):
-                                    res = "✅"
-                                else:
-                                    res = "❌"
-                                filters.append(
-                                    {
-                                        "pattern": pattern["name"],
-                                        "smarts": f"`{pattern["smarts"]}`",
-                                        "found": res,
-                                    }
-                                )
-                            st.table(filters)
-                    st.divider()
-                except Exception as e:
-                    st.error(f"Error generating image for {mol_data['chembl_id']}: {e}")
+            with st.expander("Filtered Molecules", expanded=True):
+                st.subheader("Filtered molecules")
+                for mol_data in filtered_mols_data:
+                    try:
+                        img_col, desc_col = st.columns([1, 1])
+                        with img_col:
+                            st.image(Draw.MolToImage(mol_data["mol"]))
+                            st.write("CHEMBL ID: ", mol_data["chembl_id"])
+                            st.write("SMILES: ", f'`{mol_data["canonical_smiles"]}`')
+                        with desc_col:
+                            if expose_patterns:
+                                filters = []
+                                for pattern in ss.reactive_patterns:
+                                    if mol_data["mol"].HasSubstructMatch(pattern["mol"]):
+                                        res = "✅"
+                                    else:
+                                        res = "❌"
+                                    filters.append(
+                                        {
+                                            "pattern": pattern["name"],
+                                            "smarts": f"`{pattern["smarts"]}`",
+                                            "found": res,
+                                        }
+                                    )
+                                st.table(filters)
+                        st.divider()
+                    except Exception as e:
+                        st.error(f"Error generating image for {mol_data['chembl_id']}: {e}")
 
     st.sidebar.header("Fragments settings", divider=True)
     fragment_min_dim = st.sidebar.number_input(
@@ -211,23 +223,22 @@ if st_target_id is not target_id_empty_value:
         disabled=fragment_flexibility != chem_filters.Flexibility.FLEXIBLE,
     )
 
-    gen_fragment = st.sidebar.button("Generate fragments", icon="▶️")
-
-    if gen_fragment:
-        frag_list = set()
-        for mol_data in filtered_mols_data:
-            for bric in chem_fragments.brics_from_mol(mol_data["mol"]):
-                frag_list.add(bric)
-        ss.frag_mol_list_filtered = [
-            frag_mol
-            for frag_mol in [chem_fragments.MolFromSmiles(frag) for frag in frag_list]
-            if chem_filters.mol_dimension_range(
-                frag_mol, fragment_min_dim, fragment_max_dim
-            )
-            if chem_filters.mol_flexibility(
-                frag_mol, fragment_flexibility, fragment_max_num_rot_bonds
-            )
-        ]
+    if st.sidebar.button("Generate fragments", icon="▶️"):
+        with st.spinner("Generating fragments..."):
+            frag_list = set()
+            for mol_data in filtered_mols_data:
+                for bric in chem_fragments.brics_from_mol(mol_data["mol"]):
+                    frag_list.add(bric)
+            ss.frag_mol_list_filtered = [
+                frag_mol
+                for frag_mol in [chem_fragments.MolFromSmiles(frag) for frag in frag_list]
+                if chem_filters.mol_dimension_range(
+                    frag_mol, fragment_min_dim, fragment_max_dim
+                )
+                if chem_filters.mol_flexibility(
+                    frag_mol, fragment_flexibility, fragment_max_num_rot_bonds
+                )
+            ]
 
     if ss.frag_mol_list_filtered:
         st.write(f"Total fragments: {len(ss.frag_mol_list_filtered)}")
@@ -239,9 +250,11 @@ if st_target_id is not target_id_empty_value:
                     except Exception as e:
                         st.error(f"Error generating image: {e}")
 
-st.divider()
 
 if ss.frag_mol_list_filtered:
+    
+    st.divider()
+    
     clustering_type = st.selectbox(
         "Clustering type",
         ["", "Maximum Common Substructure", "Tanimoto Similarity"],
@@ -294,7 +307,7 @@ if ss.frag_mol_list_filtered:
                         output_file=os.path.join(
                             ROOT_DIR,
                             settings.FRAGMENTS_OUTPUT_DIR,
-                            f"{st_target_id}_centroids_fragments.sdf",
+                            f"{ss.selected_target_id}_centroids_fragments.sdf",
                         ),
                     )
                 st.toast("Saved to SDF file", icon="🎉")
