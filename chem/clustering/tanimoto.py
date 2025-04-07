@@ -1,18 +1,24 @@
 import numpy as np
 import scipy.cluster.hierarchy as sch
+from rdkit.Chem import Mol
 from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
 from rdkit.DataStructs.cDataStructs import TanimotoSimilarity
 from scipy.spatial.distance import euclidean
 
 
-def _get_fingerprints(mol_list):
+def _get_fingerprints(mol_list: list[Mol]):
+    """Generate Morgan fingerprints for a list of RDKit molecules."""
     return [
         GetMorganGenerator(radius=2, fpSize=2048).GetFingerprint(mol)
         for mol in mol_list
     ]
 
 
-def hierarchical_clustering(mol_list, cluster_method, t):
+def hierarchical_clustering(
+    mol_list: list[Mol], cluster_method: str, t: None | int | float
+):
+    """Perform hierarchical clustering on a list of RDKit molecules using Tanimoto similarity."""
+
     fingerprints = _get_fingerprints(mol_list)
 
     # Compute pairwise similarity matrix
@@ -36,7 +42,16 @@ def hierarchical_clustering(mol_list, cluster_method, t):
     return cluster_labels
 
 
-def find_cluster_centroids(mol_list, cluster_labels):
+def find_cluster_centroids(mol_list: list[Mol], cluster_labels):
+    """Find the centroids of clusters based on the given cluster labels.
+
+    Args:
+        mol_list (list): List of RDKit molecules.
+        cluster_labels (list): List of cluster labels for each molecule.
+
+    Returns:
+        dict: Dictionary mapping cluster IDs to their corresponding centroid molecules.
+    """
 
     fingerprints = _get_fingerprints(mol_list)
 

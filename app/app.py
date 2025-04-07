@@ -1,4 +1,8 @@
+import logging
+
 import streamlit as st
+
+logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
 
 # Set up Streamlit page configuration
 st.set_page_config(page_title="Multi-page Streamlit App", page_icon="👋", layout="wide")

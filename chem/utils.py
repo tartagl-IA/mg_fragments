@@ -102,3 +102,13 @@ def save_mols_to_sdf(mol_list: list[Mol], output_file: str = "fragments.sdf") ->
             mol.SetProp("_Name", smiles_from_mol(mol))
             writer.write(mol)
     log.debug(f"Saved {len(mol_list)} molecules to SDF file: {output_file}")
+
+
+def remove_counterions_from_smiles(smiles: str):
+    """Remove counterions from a SMILES string.
+    Args:
+        smiles (str): SMILES string representation of the molecule
+    Returns:
+        str: SMILES string without counterions
+    """
+    return max(smiles.split("."), key=len)

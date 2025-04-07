@@ -1,5 +1,4 @@
 import numpy as np
-from rdkit import Chem
 from rdkit.Chem import rdFMCS
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import squareform

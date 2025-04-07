@@ -4,6 +4,16 @@ from rdkit.Chem import BRICS, Mol, MolFromSmiles, rdMolDescriptors
 
 
 def brics_from_mol(mol: Mol, min_size: int = 1) -> list[str]:
+    """Generate BRICS fragments from a molecule.
+
+    Args:
+        mol (Mol): RDKit molecule object.
+        min_size (int, optional): Minimum size of the BRIC fragment.
+            Default is 1, meaning all fragments are returned.
+
+    Returns:
+        list[str]: List of BRICS fragments as SMILES strings.
+    """
     # TODO: can be defined a minimum dimension of the BRIC with minFragmentSize
     return BRICS.BRICSDecompose(mol, minFragmentSize=min_size)
 

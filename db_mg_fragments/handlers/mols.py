@@ -1,6 +1,7 @@
 """Handler for the 'mols' table in the SQLite database."""
 
 import sqlite3
+from dataclasses import dataclass
 from typing import Any, Generator
 
 from logger import get_logger
@@ -9,6 +10,15 @@ from .. import get_db_connection
 
 TABLE_NAME = "mols"
 log = get_logger("DB MGF")
+
+
+@dataclass
+class Molecule:
+    """Pydantic model for a molecule."""
+
+    target_id: str
+    chembl_id: str
+    canonical_smiles: str
 
 
 def insert(connection: sqlite3.Connection, mol: dict[str, Any]) -> None:
@@ -59,12 +69,21 @@ def remove_by_target_id(connection: sqlite3.Connection, target_id: str) -> None:
     connection.commit()
     log.debug(f"Removed from '{TABLE_NAME}' table by target_id: {target_id}")
 
+
 def get_available_targets() -> list[str]:
+    """Retrieves all unique target IDs from the 'mols' table.
+
+    Args:
+        connection (sqlite3.Connection): SQLite database connection.
+
+    Returns:
+        list: List of unique target IDs.
+    """
     log.debug(f"Fetching from '{TABLE_NAME}' table available targets")
     connection = get_db_connection()
     cursor = connection.cursor()
     query = f"""
-        SELECT DISTINCT target_id FROM mols
+        SELECT DISTINCT target_id FROM {TABLE_NAME}
     """
     cursor.execute(query)
     res = [row["target_id"] for row in cursor.fetchall()]

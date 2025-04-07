@@ -12,3 +12,4 @@ FRAGMENTS_FLEXIBILITY = "rigid"  # 'rigid' or 'flexible'
 FRAGMENTS_MAX_ROTABLE_BONDS = 1
 FRAGMENTS_OUTPUT_DIR = os.path.join("outputs", "fragments")
 FRAGMENTS_TOP_RES = 20
+REACTIVE_PATTERN_FILE = os.path.join("chem", "reactive_patterns.json")

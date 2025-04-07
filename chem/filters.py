@@ -1,59 +1,41 @@
 """Filters for molecules."""
 
 import json
+from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from rdkit.Chem import Mol, MolFromSmarts, rdMolDescriptors
 
-# REACTIVE_PATTERN_SMARTS_DICT = [
-#     {
-#         "name": "Michael acceptor",
-#         "smarts": "C=O[C]=[C]",
-#     },
-#     {
-#         "name": "Aldehydes",
-#         "smarts": "[CX3H1](=O)[#6]",
-#     },
-#     {
-#         "name": "Acyl halides",
-#         "smarts": "[CX3](=[OX1])[F,Cl,Br,I]",
-#     },
-#     {
-#         "name": "Isocyanates",
-#         "smarts": "[CX3](=O)N=C=O",
-#     },
-#     {
-#         "name": "Sulfonyl halides",
-#         "smarts": "[SX4](=O)(=O)[Cl,Br,I]",
-#     },
-#     {
-#         "name": "Epoxides",
-#         "smarts": "[C;R][O;R][C;R]",
-#     },
-#     {
-#         "name": "Aziridines",
-#         "smarts": "[#6]-1-[#6]-[#7]-1",
-#     },
-#     {
-#         "name": "Thiiranes",
-#         "smarts": "[C;R][S;R][C;R]",
-#     }
-# ]
+import settings
 
 
-def get_reactive_patterns():
-    with open("chem/reactive_patterns.json", "r") as f:
-        patterns = json.load(f)
-    print(patterns)
-    for pattern in patterns:
-        pattern["mol"] = MolFromSmarts(pattern["smarts"])
+@dataclass
+class ReactivePattern:
+    """Class to represent a reactive pattern."""
 
-    return patterns
+    name: str
+    smarts: str
+    mol: Optional[Mol] = None
+
+    def to_dict(self) -> dict:
+        """Convert the ReactivePattern to a JSON serializable dictionary."""
+        return {
+            "name": self.name,
+            "smarts": self.smarts,
+        }
 
 
-REACTIVE_PATTERN_SMARTS_DICT_CACHE = [
-    pattern["mol"] for pattern in get_reactive_patterns()
-]
+def get_reactive_pattern_list() -> list[ReactivePattern]:
+    """Load reactive patterns from a JSON file.
+    Returns:
+        list[ReactivePattern]: List of reactive patterns.
+    """
+    with open(settings.REACTIVE_PATTERN_FILE, "r") as f:
+        reactive_pattern_list = [ReactivePattern(**p) for p in json.load(f)]
+    for reactive_pattern in reactive_pattern_list:
+        reactive_pattern.mol = MolFromSmarts(reactive_pattern.smarts)
+    return reactive_pattern_list
 
 
 class Flexibility(str, Enum):
@@ -65,7 +47,9 @@ class Flexibility(str, Enum):
         return [e.value for e in cls]
 
 
-def mol_reactive(mol: Mol, mol_patterns=None) -> bool:
+def mol_reactive(
+    mol: Mol, reactive_pattern_list: None | list[ReactivePattern] = None
+) -> bool:
     """Check if a molecule contains electrophilic groups using precompiled SMARTS.
 
     Args:
@@ -74,9 +58,9 @@ def mol_reactive(mol: Mol, mol_patterns=None) -> bool:
     Returns:
         bool: True if the molecule contains reactive groups, False otherwise.
     """
-    if not mol_patterns:
-        patterns = REACTIVE_PATTERN_SMARTS_DICT_CACHE
-    return any(mol.HasSubstructMatch(pattern) for pattern in mol_patterns)
+    if reactive_pattern_list is None:
+        reactive_pattern_list = get_reactive_pattern_list()
+    return any(mol.HasSubstructMatch(pattern.mol) for pattern in reactive_pattern_list)
 
 
 def mol_dimension_range(mol: Mol, min_atoms: int = 0, max_atoms: int = 0) -> bool:
@@ -98,14 +82,20 @@ def mol_dimension_range(mol: Mol, min_atoms: int = 0, max_atoms: int = 0) -> boo
 def mol_flexibility(
     mol: Mol, flexibility: Flexibility, max_rotable_bond_flexible: None | int = None
 ) -> bool:
+    """Check if the molecule is flexible or rigid.
+    Args:
+        mol (Mol): RDKit molecule object.
+        flexibility (Flexibility): Flexibility type.
+        max_rotable_bond_flexible (int): Maximum number of rotatable bonds for flexible molecules.
+            Default None (unset).
+    Returns:
+        bool: True if the molecule is flexible or rigid according to the specified criteria.
+    """
     rb_num = rdMolDescriptors.CalcNumRotatableBonds(mol)
     if not max_rotable_bond_flexible:
         max_rotable_bond_flexible = 1
-    if (
-        flexibility == Flexibility.RIGID
-        and rb_num == 0
-        or flexibility == Flexibility.FLEXIBLE
-        and rb_num == max_rotable_bond_flexible
+    if (flexibility == Flexibility.RIGID and rb_num == 0) or (
+        flexibility == Flexibility.FLEXIBLE and rb_num == max_rotable_bond_flexible
     ):
         return True
     return False
