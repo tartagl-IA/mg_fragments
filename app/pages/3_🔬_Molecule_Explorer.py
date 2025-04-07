@@ -10,12 +10,12 @@ from rdkit.Chem import Draw, Mol
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(ROOT_DIR)
 
+import db_mg_fragments.handlers.mols as db_mgf_mols_handler
 import settings
 from chem import clustering as chem_clustering
 from chem import filters as chem_filters
 from chem import fragments as chem_fragments
 from chem import utils as chem_utils
-from db_mg_fragments.handlers import mols as db_mgf_mols_handler
 
 
 @dataclass
@@ -87,7 +87,7 @@ st.title("Molecule Explorer")
 empty_selection = "-- Select a target --"
 st.sidebar.selectbox(
     label="Target ID",
-    options=[empty_selection]+ss.db_mgf_target_id_list,
+    options=[empty_selection] + ss.db_mgf_target_id_list,
     index=ss.selected_target_id_idx,
     key="selected_target_id",
     on_change=selected_target_id_on_change,
@@ -285,11 +285,9 @@ if ss.target_mols_data_filtered:
     with c2:
         if ss.frag_mol_list_filtered:
             show_fragments = st.button("Show fragments", icon="🔍")
-    
+
     if ss.frag_mol_list_filtered:
-        st.sidebar.write(
-            f"Generated fragments: `{len(ss.frag_mol_list_filtered)}`"
-        )
+        st.sidebar.write(f"Generated fragments: `{len(ss.frag_mol_list_filtered)}`")
 
     if ss.frag_mol_list_filtered and show_fragments:
         with st.spinner("Generating fragments images..."):

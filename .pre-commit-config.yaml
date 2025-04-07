@@ -25,7 +25,9 @@ repos:
     rev: v1.15.0
     hooks:
       - id: mypy
-        language_version: python3
+        language: system
+        types: [python]
+        entry: bash -c 'MYPYPATH=. mypy .'
         args:
           - --ignore-missing-imports
           - --disallow-untyped-calls

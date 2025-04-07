@@ -6,14 +6,15 @@ import streamlit as st
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.append(ROOT_DIR)
 
+import db_mg_fragments
+import db_mg_fragments.handlers.mols as db_mgf_mols_handlers
+
 ss = st.session_state
 sb = st.sidebar
 if "db_chembl_target_id_list" not in ss:
     ss.db_chembl_target_id_list = None
 if "db_mgf_target_id_list" not in ss:
-    from db_mg_fragments.handlers.mols import get_available_targets
-
-    ss.db_mgf_target_id_list = get_available_targets()
+    ss.db_mgf_target_id_list = db_mgf_mols_handlers.get_available_targets()
 
 st.set_page_config(page_title="DB Explorer", page_icon="📊", layout="wide")
 st.title("DB Explorer")
@@ -62,11 +63,10 @@ if ss.db_mgf_target_id_list and action == "Remove Target":
         if st.button(f"Remove Target {selected_target_id}"):
             with st.spinner("Removing Target"):
                 try:
-                    from db_mg_fragments import get_db_connection
-                    from db_mg_fragments.handlers.mols import remove_by_target_id
-
-                    connection = get_db_connection()
-                    remove_by_target_id(connection, selected_target_id)
+                    connection = db_mg_fragments.get_db_connection()
+                    db_mgf_mols_handlers.remove_by_target_id(
+                        connection, selected_target_id
+                    )
                     connection.close()
                     st.success(f"Target ID {selected_target_id} removed successfully.")
                 except Exception as e:
