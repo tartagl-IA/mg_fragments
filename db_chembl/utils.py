@@ -5,7 +5,26 @@ from typing import Any, Generator
 
 from logger import get_logger
 
+from . import get_db_connection
+
 log = get_logger("DB CHEMBL")
+
+
+def get_available_target_ids():
+    """Fetches all available target IDs from the 'target_dictionary' table.
+
+    Returns:
+        list: List of tuples containing target IDs.
+    """
+    log.debug("Fetching available target IDs")
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    query = "SELECT DISTINCT chembl_id FROM target_dictionary"
+    cursor.execute(query)
+    target_ids = [row[0] for row in cursor.fetchall()]
+    connection.close()
+    log.debug(f"Fetched {len(target_ids)} target IDs")
+    return target_ids
 
 
 def get_mols_from_target_id(

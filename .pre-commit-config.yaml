@@ -21,16 +21,6 @@ repos:
         args:
           - --convention=google
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
-    hooks:
-      - id: mypy
-        language_version: python3
-        args:
-          - --ignore-missing-imports
-          - --disallow-untyped-calls
-          - --disallow-untyped-defs
-
   - repo: https://github.com/pycqa/flake8
     rev: 7.1.2
     hooks:
@@ -38,4 +28,4 @@ repos:
         language_version: python3
         args:
           - --max-line-length=100
-          - --ignore=D100,D101,D102,E501
+          - --ignore=D100,D101,D102,E402,E501

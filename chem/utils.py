@@ -1,6 +1,19 @@
 """Utilities for working with RDKit molecules."""
 
-from rdkit.Chem import Mol, MolFromSmiles, MolToSmarts, MolToSmiles, SDWriter
+from io import BytesIO
+
+from rdkit.Chem import (
+    Draw,
+    Kekulize,
+    Mol,
+    MolFromSmarts,
+    MolFromSmiles,
+    MolToSmarts,
+    MolToSmiles,
+    RemoveStereochemistry,
+    SanitizeMol,
+    SDWriter,
+)
 
 from logger import get_logger
 
@@ -43,6 +56,18 @@ def mol_from_smiles(smiles: str) -> Mol:
     return MolFromSmiles(smiles)
 
 
+def mol_from_smarts(smarts: str) -> Mol:
+    """Create an RDKit molecule from a SMILES string.
+
+    Args:
+        smarts (str): SMARTS string representation of the molecule
+
+    Returns:
+        Mol: RDKit molecule object
+    """
+    return MolFromSmarts(smarts)
+
+
 def unique_mol_list(mol_list: list[Mol]) -> list[Mol]:
     """Remove duplicate molecules from a list of RDKit molecules.
 
@@ -60,6 +85,21 @@ def unique_mol_list(mol_list: list[Mol]) -> list[Mol]:
     return list(unique_mols.values())
 
 
+def mol_to_bytes(mol: Mol) -> bytes:
+    """Convert an RDKit molecule to a PNG image in bytes.
+
+    Args:
+        mol (Mol): RDKit molecule object
+
+    Returns:
+        bytes: PNG image in bytes
+    """
+    img = Draw.MolToImage(mol, size=(300, 300))  # Generate molecule image
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
 def save_mols_to_sdf(mol_list: list[Mol], output_file: str = "fragments.sdf") -> None:
     """Save a list of RDKit molecules to an SDF file.
 
@@ -73,3 +113,29 @@ def save_mols_to_sdf(mol_list: list[Mol], output_file: str = "fragments.sdf") ->
             mol.SetProp("_Name", smiles_from_mol(mol))
             writer.write(mol)
     log.debug(f"Saved {len(mol_list)} molecules to SDF file: {output_file}")
+
+
+def remove_counterions_from_smiles(smiles: str):
+    """Remove counterions from a SMILES string.
+
+    Args:
+        smiles (str): SMILES string representation of the molecule
+    Returns:
+        str: SMILES string without counterions
+    """
+    return max(smiles.split("."), key=len)
+
+
+def sanitise_mol(mol) -> Mol:
+    """Sanitize the molecule by removing stereochemistry and kekulizing it.
+
+    Args:
+        mol (Mol): RDKit molecule object
+    Returns:
+        Mol: Sanitized RDKit molecule object
+    """
+    mol = Mol(mol)
+    RemoveStereochemistry(mol)
+    SanitizeMol(mol)
+    Kekulize(mol, clearAromaticFlags=True)
+    return mol

@@ -7,5 +7,6 @@ tmp.*
 tmp/
 
 *.db
-*tar.gz
+*.tar.gz
+*.zip
 *.sdf

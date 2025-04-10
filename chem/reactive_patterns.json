@@ -1,0 +1,74 @@
+[
+    {
+        "name": "Michael acceptor",
+        "smarts": "[C;!aH1]=[C;!a][C]=[O]"
+    },
+    {
+        "name": "Aldehydes",
+        "smarts": "[CX3H1](=O)[#6]"
+    },
+    {
+        "name": "Acyl halides",
+        "smarts": "[CX3](=[OX1])[F,Cl,Br,I]"
+    },
+    {
+        "name": "Isocyanates",
+        "smarts": "[CX3](=O)N=C=O"
+    },
+    {
+        "name": "Sulfonyl halides",
+        "smarts": "[SX4](=O)(=O)[Cl,Br,I]"
+    },
+    {
+        "name": "Epoxides",
+        "smarts": "[#6]-1-[#6]-[#8]-1"
+    },
+    {
+        "name": "Aziridines",
+        "smarts": "[#6]-1-[#6]-[#7]-1"
+    },
+    {
+        "name": "Thiiranes",
+        "smarts": "[C;R][S;R][C;R]"
+    },
+    {
+        "name": "Phosphates",
+        "smarts": "[P](=[#8])(-[#8])(-[#8])-[#8]"
+    },
+    {
+        "name": "Acetal",
+        "smarts": "[#6]-1-[#8]-[#6]-[#6]-[#8]-1"
+    },
+    {
+        "name": "Sugars",
+        "smarts": "[#6]-1-[#6]-[#6]-[#6](-[#6](-[#6]-[#8])-[#8]-1)-[#8]"
+    },
+    {
+        "name": "Oridonin-like",
+        "smarts": "[#6]-1(-[#6]-[#6]-[#6]-[#6]-1=[#6])=[#8]"
+    },
+    {
+        "name": "Si, P, B, Se atoms",
+        "smarts": "*[Si,P,B,Se]"
+    },
+    {
+        "name": "Michael acceptor 2",
+        "smarts": "[#6]=[#6](-[#6]#[#7])-[#6](=[#8])-[#6]"
+    },
+    {
+        "name": "Michael acceptor 3",
+        "smarts": "[#6]=[#6](-[#6]=[#8])-[#6](=[#8])-[#6]"
+    },
+    {
+        "name": "Dapasuntrile-like",
+        "smarts": "[#16](=[#8])(=[#8])-[#6]=[#6]-[#6]#[#7]"
+    },
+    {
+        "name": "Hydroxysulphamoyl",
+        "smarts": "[#16](=[#8])(=[#8])-[#7]-[#8]"
+    },
+    {
+        "name": "Alpha halogenated ketones",
+        "smarts": "[#6]-[#6]([#9,#17,#35,#53])=[#8]-[#6]"
+    }
+]

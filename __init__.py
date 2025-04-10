@@ -1,0 +1,1 @@
+"""MG Fragments package."""
