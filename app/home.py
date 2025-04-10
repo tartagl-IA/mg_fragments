@@ -9,12 +9,19 @@ for database operations.
 """
 
 import logging
+import os
+import sys
 
 import streamlit as st
+
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(ROOT_DIR)
 
 logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
 
 # Set up Streamlit page configuration
-st.set_page_config(page_title="Multi-page Streamlit App", page_icon="👋", layout="wide")
+st.set_page_config(page_title="MG Fragments", page_icon="🧪", layout="wide")
 
-st.switch_page("pages/2_🔬_Molecule_Explorer.py")
+with open("README.md", "r") as file:
+    readme = file.read()
+st.markdown(readme, unsafe_allow_html=True)

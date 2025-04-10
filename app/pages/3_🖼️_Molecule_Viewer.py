@@ -64,7 +64,7 @@ def mol_to_bytes(mol: Mol) -> bytes:
 
 
 st.set_page_config(page_title="Molecule Viewer", page_icon="🧪", layout="wide")
-st.title("Molecule Viewer")
+st.title("🧪 Molecule Viewer")
 
 file = st.sidebar.selectbox(
     label="Target File", options=get_available_targets(), index=None

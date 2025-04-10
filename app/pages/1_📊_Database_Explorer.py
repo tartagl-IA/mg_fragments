@@ -55,7 +55,7 @@ def import_mol_by_targets_from_chem_db(target_id_list: list[str]) -> None:
 
 
 st.set_page_config(page_title="DB Explorer", page_icon="📊", layout="wide")
-st.title("DB Explorer")
+st.title("📊 Database Explorer")
 
 action = sb.selectbox("Actions", ["Import target", "Remove Target"])
 with st.expander("DB MGF Available Target IDs", expanded=True):

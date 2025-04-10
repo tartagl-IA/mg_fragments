@@ -84,18 +84,14 @@ def reactive_toggle_on_change():
 # --- page ---
 
 
-st.set_page_config(page_title="Molecule Explorer", page_icon="📊", layout="wide")
-
-with st.popover("Session State", icon="🔄"):
-    st.write(ss.cluster_labels)
-    st.write(ss.centroids)
+st.set_page_config(page_title="Molecule Explorer", page_icon="🔬", layout="wide")
 
 if ss.reactive_pattern_list is None:
     ss.reactive_pattern_list = chem_filters.get_reactive_pattern_list()
 if ss.db_mgf_target_id_list is None:
     ss.db_mgf_target_id_list = db_mgf_mols_handler.get_available_targets()
 
-st.title("Molecule Explorer")
+st.title("🔬 Molecule Explorer")
 
 ss.selected_target_id = st.sidebar.selectbox(
     label="Target ID",
