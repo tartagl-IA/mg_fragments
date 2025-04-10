@@ -28,6 +28,7 @@ class ReactivePattern:
 
 def get_reactive_pattern_list() -> list[ReactivePattern]:
     """Load reactive patterns from a JSON file.
+
     Returns:
         list[ReactivePattern]: List of reactive patterns.
     """
@@ -39,11 +40,23 @@ def get_reactive_pattern_list() -> list[ReactivePattern]:
 
 
 class Flexibility(str, Enum):
+    """Enum to represent the flexibility of a molecule.
+
+    Attributes:
+        RIGID: Rigid molecule.
+        FLEXIBLE: Flexible molecule.
+    """
+
     RIGID = "rigid"
     FLEXIBLE = "flexible"
 
     @classmethod
     def values(cls) -> list[str]:
+        """Get all possible values of the Flexibility enum.
+
+        Returns:
+            list[str]: List of all possible values.
+        """
         return [e.value for e in cls]
 
 
@@ -83,11 +96,13 @@ def mol_flexibility(
     mol: Mol, flexibility: Flexibility, max_rotable_bond_flexible: None | int = None
 ) -> bool:
     """Check if the molecule is flexible or rigid.
+
     Args:
         mol (Mol): RDKit molecule object.
         flexibility (Flexibility): Flexibility type.
         max_rotable_bond_flexible (int): Maximum number of rotatable bonds for flexible molecules.
             Default None (unset).
+
     Returns:
         bool: True if the molecule is flexible or rigid according to the specified criteria.
     """

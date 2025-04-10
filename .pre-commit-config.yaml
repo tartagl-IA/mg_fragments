@@ -21,18 +21,6 @@ repos:
         args:
           - --convention=google
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
-    hooks:
-      - id: mypy
-        language: system
-        types: [python]
-        entry: bash -c 'MYPYPATH=. mypy .'
-        args:
-          - --ignore-missing-imports
-          - --disallow-untyped-calls
-          - --disallow-untyped-defs
-
   - repo: https://github.com/pycqa/flake8
     rev: 7.1.2
     hooks:

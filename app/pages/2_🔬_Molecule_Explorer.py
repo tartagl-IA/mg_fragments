@@ -1,3 +1,10 @@
+"""Molecule Explorer.
+
+This is a Streamlit app for exploring molecules and their fragments.
+It allows users to filter molecules based on reactivity patterns,
+generate fragments, and perform clustering on the fragments.
+"""
+
 import json
 import os
 import sys
@@ -20,6 +27,8 @@ from chem import utils as chem_utils
 
 @dataclass
 class MoleculeData(db_mgf_mols_handler.Molecule):
+    """Molecule data class."""
+
     mol: Mol
 
 
@@ -40,6 +49,8 @@ if "db_mgf_target_id_list" not in ss:
     ss.db_mgf_target_id_list = None
 if "selected_target_id_idx" not in ss:
     ss.selected_target_id_idx = 0
+if "fragment_flexibility" not in ss:
+    ss.fragment_flexibility = None
 if "frag_mol_list_filtered" not in ss:
     ss.frag_mol_list_filtered = None
 if "cluster_labels" not in ss:
@@ -49,19 +60,16 @@ if "centroids" not in ss:
 
 
 def selected_target_id_on_change():
+    """On change of the selected target ID, reset the filtered molecules and fragments."""
     ss.target_mols_data = None
     ss.target_mols_data_filtered = None
     ss.frag_mol_list_filtered = None
     ss.cluster_labels = None
     ss.centroids = None
-    for i, target_id in enumerate(ss.db_mgf_target_id_list, start=1):
-        if target_id == ss.selected_target_id:
-            ss.selected_target_id_idx = i
-            break
-    st.toast(f"Selected target ID: {ss.selected_target_id}", icon="🔄")
 
 
 def reactive_toggle_on_change():
+    """On change of the reactive toggle, reset the filtered molecules and fragments."""
     ss.target_mols_data_filtered = None
     ss.frag_mol_list_filtered = None
     ss.cluster_labels = None
@@ -75,7 +83,12 @@ def reactive_toggle_on_change():
 
 # --- page ---
 
+
 st.set_page_config(page_title="Molecule Explorer", page_icon="📊", layout="wide")
+
+with st.popover("Session State", icon="🔄"):
+    st.write(ss.cluster_labels)
+    st.write(ss.centroids)
 
 if ss.reactive_pattern_list is None:
     ss.reactive_pattern_list = chem_filters.get_reactive_pattern_list()
@@ -84,17 +97,16 @@ if ss.db_mgf_target_id_list is None:
 
 st.title("Molecule Explorer")
 
-empty_selection = "-- Select a target --"
-st.sidebar.selectbox(
+ss.selected_target_id = st.sidebar.selectbox(
     label="Target ID",
-    options=[empty_selection] + ss.db_mgf_target_id_list,
-    index=ss.selected_target_id_idx,
-    key="selected_target_id",
+    options=ss.db_mgf_target_id_list,
     on_change=selected_target_id_on_change,
+    # index=ss.selected_target_id_idx
 )
 
-if ss.selected_target_id != empty_selection:
-
+if ss.selected_target_id:
+    # st.toast(f"Selected target ID: {ss.selected_target_id}", icon="🔄")
+    # if ss.target_mols_data is None:
     ss.target_mols_data = []
     for data in db_mgf_mols_handler.get_by_target(ss.selected_target_id):
         ss.target_mols_data.append(
@@ -243,9 +255,9 @@ if ss.target_mols_data_filtered:
             "Fragment minimum num atoms", min_value=1, step=1, value=12
         )
         fragment_max_dim = st.number_input(
-            "Fragment maximum num atoms", min_value=0, step=1
+            "Fragment maximum num atoms", min_value=0, step=1, value=60
         )
-        fragment_flexibility = chem_filters.Flexibility(
+        ss.fragment_flexibility = chem_filters.Flexibility(
             st.pills(
                 "Fragment flexibility",
                 chem_filters.Flexibility.values(),
@@ -257,7 +269,7 @@ if ss.target_mols_data_filtered:
             "Fragment max rotable bonds",
             min_value=1,
             step=1,
-            disabled=fragment_flexibility != chem_filters.Flexibility.FLEXIBLE,
+            disabled=ss.fragment_flexibility != chem_filters.Flexibility.FLEXIBLE,
         )
 
     c1, c2, _ = st.columns([1, 1, 4])
@@ -278,7 +290,7 @@ if ss.target_mols_data_filtered:
                         frag_mol, fragment_min_dim, fragment_max_dim
                     )
                     if chem_filters.mol_flexibility(
-                        frag_mol, fragment_flexibility, fragment_max_num_rot_bonds
+                        frag_mol, ss.fragment_flexibility, fragment_max_num_rot_bonds
                     )
                 ]
                 st.toast("Fragments generated", icon="🎉")
@@ -333,28 +345,44 @@ if ss.frag_mol_list_filtered:
         else:
             t = None
 
+        st.toggle("Sanitize molecules", value=False, key="sanitize_molecules")
+
     if clustering_type_module and cluster_method:
 
         if st.button("Generate clusters", icon="▶️"):
+            if ss.sanitize_molecules:
+                frag_mol_list_filtered = [
+                    chem_utils.sanitise_mol(mol) for mol in ss.frag_mol_list_filtered
+                ]
+                st.toast("Sanitized molecules", icon="🎉")
+            else:
+                frag_mol_list_filtered = ss.frag_mol_list_filtered
             with st.spinner("Generating clusters..."):
-                ss.cluster_labels = clustering_type_module.hierarchical_clustering(
-                    ss.frag_mol_list_filtered, cluster_method, t
-                )
-                ss.centroids = clustering_type_module.find_cluster_centroids(
-                    ss.frag_mol_list_filtered, ss.cluster_labels
-                )
+                for item in clustering_type_module.hierarchical_clustering(
+                    frag_mol_list_filtered, cluster_method, t
+                ):
+                    if "log" in item:
+                        st.toast(item["log"])
+                    elif "result" in item:
+                        ss.cluster_labels = item["result"]
+                for item in clustering_type_module.find_cluster_centroids(
+                    frag_mol_list_filtered, ss.cluster_labels
+                ):
+                    if "log" in item:
+                        st.toast(item["log"])
+                    elif "result" in item:
+                        ss.centroids = item["result"]
                 st.toast("Prepared clustering results", icon="🎉")
-
-            st.toast(
-                f"Generated {len(set(ss.cluster_labels))} total clusters",
-                icon="🎉",
-            )
     if ss.cluster_labels is not None:
+        st.toast(
+            f"Generated {len(set(ss.cluster_labels))} total clusters",
+            icon="🎉",
+        )
         st.sidebar.write(
             f"Number of generated clusters: `{len(set(ss.cluster_labels))}`"
         )
 
-    if ss.cluster_labels is not None and ss.centroids is not None:
+    if ss.cluster_labels is not None:  # and ss.centroids is not None:
 
         c1, c2, _ = st.columns([1, 1, 4])
         show_clusters = None
@@ -375,18 +403,28 @@ if ss.frag_mol_list_filtered:
                 |---|---|
                 |`target_id`|{ss.selected_target_id}|
                 |`reactive`|{ss.reactive_toggle}|
+                |`flexibility`|{chem_filters.Flexibility(ss.fragment_flexibility).value}|
                 """
                 )
                 st.info(
                     "Use the keywords to create a custom file name with the format: `{target_id}_centroids_fragments.sdf`"
                 )
+                output_file_name_preformatted = "{target_id}_{reactive}_{flexibility}_centroids_fragments.sdf".format(
+                    target_id=ss.selected_target_id,
+                    reactive="reactive" if ss.reactive_toggle else "non-reactive",
+                    flexibility=chem_filters.Flexibility(ss.fragment_flexibility).value,
+                )
                 output_file_name = st.text_input(
                     "Output file name",
-                    value="{target_id}_{reactive}_centroids_fragments.sdf".format(
-                        target_id=ss.selected_target_id,
-                        reactive="reactive" if ss.reactive_toggle else "non-reactive",
-                    ),
+                    value=output_file_name_preformatted,
                 )
+                output_file_name = output_file_name.format(
+                    target_id=ss.selected_target_id,
+                    reactive="reactive" if ss.reactive_toggle else "non-reactive",
+                    flexibility=chem_filters.Flexibility(ss.fragment_flexibility).value,
+                )
+                if not output_file_name.endswith(".sdf"):
+                    output_file_name += ".sdf"
                 if st.button("Save to SDF file", icon="⬇️"):
                     chem_utils.save_mols_to_sdf(
                         [
@@ -401,12 +439,15 @@ if ss.frag_mol_list_filtered:
             with st.spinner("Generating clustered molecules..."):
                 for current_cluster_id in set(ss.cluster_labels):
                     st.subheader(f"Cluster {current_cluster_id}")
-                    st.image(
-                        chem_utils.mol_to_bytes(ss.centroids[current_cluster_id]),
-                        caption=chem_utils.smiles_from_mol(
-                            ss.centroids[current_cluster_id]
-                        ),
-                    )
+                    if ss.centroids and current_cluster_id in ss.centroids:
+                        st.image(
+                            chem_utils.mol_to_bytes(ss.centroids[current_cluster_id]),
+                            caption=chem_utils.smiles_from_mol(
+                                ss.centroids[current_cluster_id]
+                            ),
+                        )
+                    else:
+                        st.write("No centroid found for this cluster")
                     idx_mol_in_cluster = [
                         idx
                         for idx, cluster_id in enumerate(ss.cluster_labels)
