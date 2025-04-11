@@ -1,4 +1,5 @@
-# 🧪 MG Fragments
+# 🧪 MG Fragments  
+[![DOI](https://zenodo.org/badge/955623938.svg)](https://doi.org/10.5281/zenodo.15199144)
 
 ## Introduction
 
